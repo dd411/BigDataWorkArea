@@ -2,7 +2,7 @@
 #
 #script to import data from RDBMS
 #Author: Hari Priya
-#
+#Date: 22-DEC-2019
 #######################
 
 echo "SCOOP AND HIVE"
