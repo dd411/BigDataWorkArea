@@ -1,0 +1,85 @@
+#######################
+#
+#script to import data from RDBMS
+#Author: Hari Priya
+#
+#######################
+
+echo "SCOOP AND HIVE"
+echo "Choose from below options"
+echo "1 SCOOP IMPORT"
+echo "2 SCOOP EXPORT"
+
+read option
+
+#Scoop Import
+
+if [ $option -eq 1 ];then
+
+	mysql -h "localhost" -u "root" "-proot" < db_scoop_useCase1.sql
+
+	if [ $? -eq 0 ];then
+			echo "Tables to import from and export to has been successfully created!!!!!!"
+			echo "Enter database name and table name to import"
+			read db_name_import tbl_name_import
+			echo "Checking if table to import exist and has data....."
+			sqoop eval --connect jdbc:mysql://localhost/$db_name_import --username root --password root -e "desc $tbl_name_import"
+			if [ $? -eq 0 ];then
+					echo "Table exists!!!!!"
+					sqoop eval --connect jdbc:mysql://localhost/$db_name_import --username root --password root -e "select count(*) from $tabl_name_import"
+					echo "Data exists in table ...Proceeding Import!!!!!"
+					sqoop import --connect jdbc:mysql://localhost/$db_name_import --username root --password root -table $tbl_name_import -m 1 --delete-target-dir ;
+					if [ $? -eq 0 ];then
+							echo "Import successfull!!!!......"
+							echo "Files created after import"
+							hadoop fs -ls /user/hduser/$tbl_name_import
+					else
+							echo "Import failed please try again!!!!"
+					fi
+			else
+				echo "Table to import does not exists ... Please create one"
+			fi
+	else
+			echo "Failed to create tables.........Try import again!!"
+	fi
+	
+
+#Scoop Export
+
+elif [ $option -eq 2 ];then
+        echo "Enter the database name, table name, directory name to export"
+		read db_name_export tbl_name_export dir_name_export
+		echo "Checking if the table exists..........."
+		sqoop eval --connect jdbc:mysql://localhost/$db_name_export --username root --password root -e "desc $tbl_name_export"
+		if [ $? -eq 0 ];then
+			echo "Table Exists!!! Checking if the directory to export exists......"
+			if [ -d "/user/hduser/$dir_name_export" ];then
+				sqoop export --connect jdbc:mysql://localhost/$db_name_export --username root /
+				 --password root --table tbl_name_export /
+				 --export-dir /user/hduser/$tbl_name_import
+				if [ $? -eq 0 ];then
+					echo "Export successfull!!!!!!"
+					sqoop eval --connect jdbc:mysql://localhost/$db_name_export --username root --password root -e "select * from $tbl_name_export"
+				else
+					echo "Export failed please try again........."
+				fi
+			else
+				echo "Directory does not exist..Please enter correct directory to export"
+			fi
+		else
+			echo "Table does not exist..Create table to export then proceed with scoop export"
+		fi
+		
+	
+#Hive Export
+
+elif [ $option -eq 3 ];then
+
+fi
+
+else 
+	echo "Please enter 1 or 2"
+fi
+
+
+
